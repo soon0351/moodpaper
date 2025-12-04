@@ -1,58 +1,46 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MoodPaper AI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
     <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              gray: {
-                850: '#1f2937',
-                900: '#111827',
-                950: '#030712',
-              }
-            },
-            animation: {
-              'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            }
-          }
+      const memoryStorage = {};
+      try {
+        Object.defineProperty(window, 'localStorage', {
+          value: {
+            getItem: (key) => memoryStorage[key] || null,
+            setItem: (key, value) => { memoryStorage[key] = value; },
+            removeItem: (key) => { delete memoryStorage[key]; },
+            clear: () => { for (const key in memoryStorage) delete memoryStorage[key]; },
+            length: 0,
+            key: (i) => null,
+          },
+          writable: false,
+        });
+        console.log("✅ Safe Storage Mode Activated");
+      } catch (e) {
+        console.warn("Storage polyfill failed, but proceeding.");
+      }
+    </script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+          "framer-motion": "https://esm.sh/framer-motion@10.16.4",
+          "lucide-react": "https://esm.sh/lucide-react@0.292.0",
+          "zustand": "https://esm.sh/zustand@4.4.7",
+          "@google/genai": "https://esm.sh/@google/genai"
         }
       }
     </script>
-    <style>
-      body {
-        background-color: #030712;
-        color: white;
-        -webkit-tap-highlight-color: transparent;
-      }
-      /* Hide scrollbar for clean mobile look */
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
-    "zustand": "https://aistudiocdn.com/zustand@^5.0.3",
-    "zustand/middleware": "https://aistudiocdn.com/zustand@^5.0.3/middleware",
-    "zustand/": "https://aistudiocdn.com/zustand@^5.0.9/"
-  }
-}
-</script>
-</head>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
