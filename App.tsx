@@ -1,19 +1,17 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { generateWallpapers, generateCreativePrompt, generateTopicSuggestions, setApiKey } from './services/geminiService';
+import { generateWallpapers, generateCreativePrompt, generateTopicSuggestions, setApiKey as setServiceApiKey } from './services/geminiService';
 import { GeneratedImage } from './types';
 import { SparklesIcon, DownloadIcon, RefreshCwIcon, XIcon, MagicWandIcon, ChevronDownIcon, ArrowRightIcon, SettingsIcon } from './components/Icons';
 import { Button } from './components/Button';
 import { SettingsModal } from './components/SettingsModal';
-import { safeStorage } from './utils/safeStorage';
+import { useStore } from './store';
 
 export default function App() {
-  // CRITICAL: Always initialize state with static values (null, '', false).
-  // NEVER call localStorage.getItem() or safeStorage.getItem() directly in the useState initializer.
-  // This ensures the component renders successfully before attempting any potentially restricted browser APIs.
-  const [apiKey, setApiKeyState] = useState('');
+  // Use Zustand store for API Key management (Handles safe storage automatically)
+  const { apiKey, setApiKey } = useStore();
+  
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isKeyLoaded, setIsKeyLoaded] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const [prompt, setPrompt] = useState('');
   const [images, setImages] = useState<GeneratedImage[]>([]);
@@ -39,28 +37,24 @@ export default function App() {
   const resultsRef = useRef<HTMLDivElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
 
-  // Initial Load: Safe Storage Access (Render First, Logic Later)
+  // Sync API Key with Service and handle initial check
   useEffect(() => {
-    const loadKey = () => {
-      // This runs AFTER the first render.
-      // Even if safeStorage encounters an error, it is caught internally and returns null.
-      const savedKey = safeStorage.getItem('moodpaper_api_key');
-      
-      if (savedKey) {
-        setApiKeyState(savedKey);
-        setApiKey(savedKey); // Sync with Service
-      } else {
-        // No key found? Show settings after a brief delay
-        setTimeout(() => setIsSettingsOpen(true), 500);
-      }
-      setIsKeyLoaded(true);
-    };
+    // 1. Sync the key to the Gemini service
+    setServiceApiKey(apiKey);
 
-    loadKey();
-  }, []);
+    // 2. Initial Setup: If no key after mount, prompt settings
+    // Use a small timeout to allow hydration to settle and prevent flashing
+    const timer = setTimeout(() => {
+      if (!apiKey) {
+        setIsSettingsOpen(true);
+      }
+      setIsInitialized(true);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [apiKey]);
 
   const handleKeySave = (newKey: string) => {
-    setApiKeyState(newKey);
     setApiKey(newKey);
   };
 
@@ -295,7 +289,7 @@ export default function App() {
                             ref={promptRef}
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
-                            placeholder={isGeneratingPrompt ? "AI가 프롬프트를 작성 중입니다..." : (isKeyLoaded && !apiKey ? "설정 버튼을 눌러 API 키를 입력해주세요." : "최종 프롬프트가 여기에 표시됩니다.")}
+                            placeholder={isGeneratingPrompt ? "AI가 프롬프트를 작성 중입니다..." : (isInitialized && !apiKey ? "설정 버튼을 눌러 API 키를 입력해주세요." : "최종 프롬프트가 여기에 표시됩니다.")}
                             className={`w-full bg-black/20 text-white placeholder-gray-500 rounded-xl p-3 text-base outline-none resize-none mb-4 border border-transparent focus:border-white/10 transition-colors min-h-[100px] ${isGeneratingPrompt ? 'animate-pulse' : ''}`}
                             disabled={isGeneratingPrompt}
                         />

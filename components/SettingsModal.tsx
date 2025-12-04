@@ -1,9 +1,7 @@
-
 import React, { useState } from 'react';
 import { Button } from './Button';
 import { XIcon } from './Icons';
 import { validateApiKey } from '../services/geminiService';
-import { safeStorage } from '../utils/safeStorage';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -38,9 +36,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setIsValidating(false);
 
     if (isValid) {
-      // Use safeStorage to prevent crashes in restrictive environments
-      safeStorage.setItem('moodpaper_api_key', key.trim());
-      
+      // Key is saved via parent callback (which uses store)
       onSave(key.trim());
       onClose();
     } else {
