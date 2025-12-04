@@ -1,11 +1,14 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { generateWallpapers, generateCreativePrompt, generateTopicSuggestions, setApiKey } from './services/geminiService';
 import { GeneratedImage } from './types';
 import { SparklesIcon, DownloadIcon, RefreshCwIcon, XIcon, MagicWandIcon, ChevronDownIcon, ArrowRightIcon, SettingsIcon } from './components/Icons';
 import { Button } from './components/Button';
 import { SettingsModal } from './components/SettingsModal';
+import { safeStorage } from './utils/safeStorage';
 
 export default function App() {
+  // Initialize with empty string to prevent rendering issues. Load real key in useEffect.
   const [apiKey, setApiKeyState] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -33,28 +36,27 @@ export default function App() {
   const resultsRef = useRef<HTMLDivElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
 
-  // Initial Load: Safe Storage Access
+  // Initial Load: Safe Storage Access (Render First, Logic Later)
   useEffect(() => {
-    let savedKey: string | null = null;
-    try {
-      savedKey = localStorage.getItem('moodpaper_api_key');
-    } catch (e) {
-      console.warn("Storage access denied");
-    }
+    const loadKey = () => {
+      // Use safeStorage utility to strictly avoid direct localStorage calls
+      const savedKey = safeStorage.getItem('moodpaper_api_key');
+      
+      if (savedKey) {
+        setApiKeyState(savedKey);
+        setApiKey(savedKey); // Sync with Service
+      } else {
+        // No key found? Show settings after a brief delay to allow UI to settle
+        setTimeout(() => setIsSettingsOpen(true), 500);
+      }
+    };
 
-    if (savedKey) {
-      setApiKeyState(savedKey);
-      setApiKey(savedKey); // Update Service
-    } else {
-      // Prevent black screen by rendering first, then opening modal
-      setTimeout(() => setIsSettingsOpen(true), 500);
-    }
+    loadKey();
   }, []);
 
   const handleKeySave = (newKey: string) => {
     setApiKeyState(newKey);
     setApiKey(newKey);
-    // Note: LocalStorage saving is handled inside SettingsModal for better separation
   };
 
   const checkApiKey = (): boolean => {

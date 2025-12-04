@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import { Button } from './Button';
 import { XIcon } from './Icons';
 import { validateApiKey } from '../services/geminiService';
+import { safeStorage } from '../utils/safeStorage';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -36,12 +38,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setIsValidating(false);
 
     if (isValid) {
-      // Safe Storage Logic: Try to save, but catch error (e.g., incognito mode)
-      try {
-        localStorage.setItem('moodpaper_api_key', key.trim());
-      } catch (e) {
-        console.warn("로컬 스토리지에 접근할 수 없습니다. 키는 이번 세션 동안만 유지됩니다.");
-      }
+      // Use safeStorage to prevent crashes in restrictive environments
+      safeStorage.setItem('moodpaper_api_key', key.trim());
       
       onSave(key.trim());
       onClose();
