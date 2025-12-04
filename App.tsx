@@ -9,10 +9,11 @@ import { safeStorage } from './utils/safeStorage';
 
 export default function App() {
   // CRITICAL: Always initialize state with static values (null, '', false).
-  // NEVER call safeStorage.getItem() here. It must be done in useEffect.
+  // NEVER call localStorage.getItem() or safeStorage.getItem() directly in the useState initializer.
+  // This ensures the component renders successfully before attempting any potentially restricted browser APIs.
   const [apiKey, setApiKeyState] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isKeyLoaded, setIsKeyLoaded] = useState(false); // New state to track if we've finished checking storage
+  const [isKeyLoaded, setIsKeyLoaded] = useState(false);
 
   const [prompt, setPrompt] = useState('');
   const [images, setImages] = useState<GeneratedImage[]>([]);
@@ -41,14 +42,15 @@ export default function App() {
   // Initial Load: Safe Storage Access (Render First, Logic Later)
   useEffect(() => {
     const loadKey = () => {
-      // This runs AFTER the first render, preventing black screens.
+      // This runs AFTER the first render.
+      // Even if safeStorage encounters an error, it is caught internally and returns null.
       const savedKey = safeStorage.getItem('moodpaper_api_key');
       
       if (savedKey) {
         setApiKeyState(savedKey);
         setApiKey(savedKey); // Sync with Service
       } else {
-        // No key found? Show settings after a brief delay to allow UI to settle
+        // No key found? Show settings after a brief delay
         setTimeout(() => setIsSettingsOpen(true), 500);
       }
       setIsKeyLoaded(true);

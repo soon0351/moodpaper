@@ -6,16 +6,17 @@ export const safeStorage = {
   /**
    * Safely retrieves an item from storage.
    * Returns null if not found or if storage is blocked/throws SecurityError.
+   * Suppresses all errors to prevent app crashes.
    */
   getItem: (key: string): string | null => {
     try {
-      // Accessing window.localStorage itself can throw a SecurityError in some iframe/privacy contexts
+      // We wrap the entire access in try-catch because simply accessing window.localStorage
+      // can throw a SecurityError in strict privacy modes/iframes.
       if (typeof window !== 'undefined' && window.localStorage) {
         return window.localStorage.getItem(key);
       }
     } catch (e) {
-      // Access denied or storage unavailable - silently fall back to memory
-      console.warn('LocalStorage access denied. Using in-memory fallback.');
+      // Silently fail - do not log to console to avoid noise
     }
     return memoryStore[key] || null;
   },
@@ -30,7 +31,7 @@ export const safeStorage = {
         window.localStorage.setItem(key, value);
       }
     } catch (e) {
-      // Access denied - save to memory only
+      // Silently fail
     }
     // Always save to memory sync for current session consistency
     memoryStore[key] = value;
@@ -45,7 +46,7 @@ export const safeStorage = {
         window.localStorage.removeItem(key);
       }
     } catch (e) {
-      // Access denied
+      // Silently fail
     }
     delete memoryStore[key];
   }
