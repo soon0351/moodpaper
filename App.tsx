@@ -8,9 +8,11 @@ import { SettingsModal } from './components/SettingsModal';
 import { safeStorage } from './utils/safeStorage';
 
 export default function App() {
-  // Initialize with empty string to prevent rendering issues. Load real key in useEffect.
+  // CRITICAL: Always initialize state with static values (null, '', false).
+  // NEVER call safeStorage.getItem() here. It must be done in useEffect.
   const [apiKey, setApiKeyState] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isKeyLoaded, setIsKeyLoaded] = useState(false); // New state to track if we've finished checking storage
 
   const [prompt, setPrompt] = useState('');
   const [images, setImages] = useState<GeneratedImage[]>([]);
@@ -39,7 +41,7 @@ export default function App() {
   // Initial Load: Safe Storage Access (Render First, Logic Later)
   useEffect(() => {
     const loadKey = () => {
-      // Use safeStorage utility to strictly avoid direct localStorage calls
+      // This runs AFTER the first render, preventing black screens.
       const savedKey = safeStorage.getItem('moodpaper_api_key');
       
       if (savedKey) {
@@ -49,6 +51,7 @@ export default function App() {
         // No key found? Show settings after a brief delay to allow UI to settle
         setTimeout(() => setIsSettingsOpen(true), 500);
       }
+      setIsKeyLoaded(true);
     };
 
     loadKey();
@@ -290,7 +293,7 @@ export default function App() {
                             ref={promptRef}
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
-                            placeholder={isGeneratingPrompt ? "AI가 프롬프트를 작성 중입니다..." : (apiKey ? "최종 프롬프트가 여기에 표시됩니다." : "설정 버튼을 눌러 API 키를 입력해주세요.")}
+                            placeholder={isGeneratingPrompt ? "AI가 프롬프트를 작성 중입니다..." : (isKeyLoaded && !apiKey ? "설정 버튼을 눌러 API 키를 입력해주세요." : "최종 프롬프트가 여기에 표시됩니다.")}
                             className={`w-full bg-black/20 text-white placeholder-gray-500 rounded-xl p-3 text-base outline-none resize-none mb-4 border border-transparent focus:border-white/10 transition-colors min-h-[100px] ${isGeneratingPrompt ? 'animate-pulse' : ''}`}
                             disabled={isGeneratingPrompt}
                         />
